@@ -1,203 +1,167 @@
+```html
 <!DOCTYPE html>
-
-<html lang="en">
+<html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-```
-<title>Copy Images</title>
+    <title>Afbeeldingen kopiëren</title>
 
-<style>
-    * {
-        box-sizing: border-box;
-    }
-
-    body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: Arial, Helvetica, sans-serif;
-        background: #f5f5f5;
-        color: #222;
-    }
-
-    .page {
-        width: min(1000px, 100%);
-        margin: 0 auto;
-        padding: 30px 20px;
-    }
-
-    h1 {
-        text-align: center;
-        margin: 0 0 8px;
-        font-size: 28px;
-    }
-
-    .instructions {
-        text-align: center;
-        margin: 0 0 30px;
-        color: #666;
-    }
-
-    /*
-     * Six images in a 3 x 2 grid.
-     */
-    .images {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-    }
-
-    /*
-     * Each thumbnail is a button, so it is also
-     * keyboard accessible.
-     */
-    .image-button {
-        border: 2px solid #ddd;
-        border-radius: 12px;
-        background: white;
-        padding: 10px;
-        cursor: pointer;
-
-        height: 250px;
-
-        display: flex;
-        justify-content: center;
-        align-items: center;
-
-        transition:
-            border-color 0.15s ease,
-            transform 0.15s ease,
-            box-shadow 0.15s ease;
-    }
-
-    .image-button:hover {
-        border-color: #888;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    }
-
-    .image-button:active {
-        transform: translateY(0);
-    }
-
-    .image-button:focus {
-        outline: 3px solid #4d90fe;
-        outline-offset: 2px;
-    }
-
-    /*
-     * The image is only displayed as a thumbnail.
-     * The original file is still copied when clicked.
-     */
-    .image-button img {
-        display: block;
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-    }
-
-    .status {
-        min-height: 30px;
-        margin-top: 25px;
-        text-align: center;
-        font-weight: bold;
-    }
-
-    .status.success {
-        color: #188038;
-    }
-
-    .status.error {
-        color: #c5221f;
-    }
-
-    /*
-     * On smaller screens, use two columns.
-     */
-    @media (max-width: 700px) {
-        .images {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    /*
-     * On very small screens, use one column.
-     */
-    @media (max-width: 450px) {
-        .images {
-            grid-template-columns: 1fr;
+    <style>
+        * {
+            box-sizing: border-box;
         }
 
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+        }
+
+        .page {
+            width: 100%;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 0 30px;
+            font-size: 28px;
+        }
+
+        /*
+         * Vier afbeeldingen op de eerste rij,
+         * twee afbeeldingen op de tweede rij.
+         */
+        .images {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        /*
+         * De thumbnails passen zich automatisch
+         * aan aan de beschikbare breedte.
+         */
         .image-button {
-            height: 220px;
-        }
-    }
-</style>
-```
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            background: white;
+            padding: 10px;
+            cursor: pointer;
 
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1 / 1;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            transition:
+                border-color 0.15s ease,
+                transform 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .image-button:hover {
+            border-color: #888;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .image-button:active {
+            transform: translateY(0);
+        }
+
+        .image-button:focus {
+            outline: 3px solid #4d90fe;
+            outline-offset: 2px;
+        }
+
+        /*
+         * De afbeelding blijft volledig zichtbaar
+         * binnen de thumbnail.
+         */
+        .image-button img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+
+        /*
+         * Op kleinere schermen worden het twee kolommen.
+         */
+        @media (max-width: 700px) {
+            .images {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /*
+         * Op zeer kleine schermen één kolom.
+         */
+        @media (max-width: 450px) {
+            .images {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="page">
 
-```
-<h1>Click an image to copy it</h1>
+    <h1>Klik op een afbeelding om te kopiëren.</h1>
 
-<p class="instructions">
-    Click an image to copy the full-size image.
-</p>
+    <div class="images">
 
-<div class="images">
+        <button class="image-button" type="button"
+                onclick="copyImage('image1.png')">
+            <img src="image1.png" alt="Image 1">
+        </button>
 
-    <button class="image-button" type="button" onclick="copyImage('image1.png')">
-        <img src="image1.png" alt="Image 1">
-    </button>
+        <button class="image-button" type="button"
+                onclick="copyImage('image2.png')">
+            <img src="image2.png" alt="Image 2">
+        </button>
 
-    <button class="image-button" type="button" onclick="copyImage('image2.png')">
-        <img src="image2.png" alt="Image 2">
-    </button>
+        <button class="image-button" type="button"
+                onclick="copyImage('image3.png')">
+            <img src="image3.png" alt="Image 3">
+        </button>
 
-    <button class="image-button" type="button" onclick="copyImage('image3.png')">
-        <img src="image3.png" alt="Image 3">
-    </button>
+        <button class="image-button" type="button"
+                onclick="copyImage('image4.png')">
+            <img src="image4.png" alt="Image 4">
+        </button>
 
-    <button class="image-button" type="button" onclick="copyImage('image4.png')">
-        <img src="image4.png" alt="Image 4">
-    </button>
+        <button class="image-button" type="button"
+                onclick="copyImage('image5.png')">
+            <img src="image5.png" alt="Image 5">
+        </button>
 
-    <button class="image-button" type="button" onclick="copyImage('image5.png')">
-        <img src="image5.png" alt="Image 5">
-    </button>
+        <button class="image-button" type="button"
+                onclick="copyImage('image6.png')">
+            <img src="image6.png" alt="Image 6">
+        </button>
 
-    <button class="image-button" type="button" onclick="copyImage('image6.png')">
-        <img src="image6.png" alt="Image 6">
-    </button>
-
-</div>
-
-<div id="status" class="status" aria-live="polite"></div>
-```
+    </div>
 
 </div>
 
 <script>
 async function copyImage(filename) {
-    const status = document.getElementById("status");
-
-    status.textContent = "";
-    status.className = "status";
 
     try {
-        /*
-         * Fetch the ORIGINAL image.
-         *
-         * This is important: the thumbnail displayed on the
-         * page does not determine the resolution of the copy.
-         */
         const response = await fetch(filename);
 
         if (!response.ok) {
@@ -206,12 +170,6 @@ async function copyImage(filename) {
 
         const originalBlob = await response.blob();
 
-        /*
-         * Clipboard image support works best with PNG.
-         *
-         * If the source image is already PNG, we can use it
-         * directly. Otherwise convert it to PNG first.
-         */
         let pngBlob;
 
         if (originalBlob.type === "image/png") {
@@ -220,33 +178,18 @@ async function copyImage(filename) {
             pngBlob = await convertToPng(originalBlob);
         }
 
-        /*
-         * Copy the FULL-SIZE image to the clipboard.
-         */
         const clipboardItem = new ClipboardItem({
             "image/png": pngBlob
         });
 
         await navigator.clipboard.write([clipboardItem]);
 
-        status.textContent = "✓ Image copied! You can paste it now.";
-        status.className = "status success";
-
     } catch (error) {
         console.error("Copy failed:", error);
-
-        status.textContent =
-            "Could not copy the image. Please check your browser permissions.";
-
-        status.className = "status error";
     }
 }
 
 
-/*
- * Convert JPG/JPEG/etc. to PNG while preserving
- * the original image dimensions.
- */
 function convertToPng(blob) {
     return new Promise((resolve, reject) => {
 
@@ -295,3 +238,4 @@ function convertToPng(blob) {
 
 </body>
 </html>
+```
