@@ -22,7 +22,6 @@
 
         .page {
             width: 100%;
-            margin: 0 auto;
             padding: 30px 20px;
         }
 
@@ -59,8 +58,8 @@
 
         .slider {
             position: absolute;
-            cursor: pointer;
             inset: 0;
+            cursor: pointer;
             background: #888;
             border-radius: 28px;
             transition: 0.2s;
@@ -88,18 +87,16 @@
 
         /*
          * Vier afbeeldingen op de eerste rij.
+         * Twee gecentreerd op de tweede rij.
          */
         .images {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             width: 100%;
+            align-items: start;
         }
 
-        /*
-         * De afbeeldingen 5 en 6 worden in het midden
-         * van de onderste rij geplaatst.
-         */
         .image-button:nth-child(5) {
             grid-column: 2;
         }
@@ -109,7 +106,7 @@
         }
 
         /*
-         * Thumbnail.
+         * De knop zelf past zich aan de afbeelding aan.
          */
         .image-button {
             border: 2px solid #ddd;
@@ -119,8 +116,6 @@
             cursor: pointer;
 
             width: 100%;
-            aspect-ratio: 1 / 1;
-
             display: flex;
             justify-content: center;
             align-items: center;
@@ -146,19 +141,26 @@
             outline-offset: 2px;
         }
 
+        /*
+         * BELANGRIJK:
+         *
+         * De Javascript-code zet de breedte en hoogte
+         * van de afbeeldingen op 25% van hun originele
+         * afmetingen.
+         */
         .image-button img {
             display: block;
-            max-width: 100%;
-            max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain;
+            max-width: none;
         }
 
         /*
-         * Op kleinere schermen twee kolommen blijven gebruiken.
-         * Hierdoor worden de thumbnails steeds kleiner in plaats
-         * van weer groter te worden.
+         * Als het venster te klein wordt, mogen de
+         * thumbnails visueel kleiner worden.
+         *
+         * Dit verandert NIET de grootte van de afbeelding
+         * die wordt gekopieerd.
          */
         @media (max-width: 700px) {
             .page {
@@ -170,15 +172,14 @@
                 gap: 10px;
             }
 
-            /*
-             * Bij twee kolommen gewoon normaal vullen:
-             * 1 2
-             * 3 4
-             * 5 6
-             */
             .image-button:nth-child(5),
             .image-button:nth-child(6) {
                 grid-column: auto;
+            }
+
+            .image-button img {
+                max-width: 100%;
+                height: auto;
             }
         }
 
@@ -254,9 +255,45 @@
 
 <script>
 
+/*
+ * Toon iedere afbeelding op 25% van zijn originele
+ * pixelafmetingen.
+ */
+function setThumbnailSizes() {
+
+    const images = document.querySelectorAll(".image-button img");
+
+    images.forEach(image => {
+
+        if (image.naturalWidth === 0) {
+            return;
+        }
+
+        image.style.width =
+            (image.naturalWidth * 0.25) + "px";
+
+        image.style.height =
+            (image.naturalHeight * 0.25) + "px";
+    });
+}
+
+
+/*
+ * Wacht tot alle afbeeldingen geladen zijn.
+ */
+window.addEventListener("load", setThumbnailSizes);
+
+
+/*
+ * Kopieer de afbeelding.
+ *
+ * Scherm   = 25%
+ * Document = 100%
+ */
 async function copyImage(filename) {
 
     try {
+
         const response = await fetch(filename);
 
         if (!response.ok) {
@@ -265,25 +302,13 @@ async function copyImage(filename) {
 
         const originalBlob = await response.blob();
 
-        /*
-         * Bepaal de gewenste schaal.
-         *
-         * Scherm   = 25%
-         * Document = 100%
-         */
         const documentMode =
             document.getElementById("documentMode").checked;
 
         const scale = documentMode ? 1.0 : 0.25;
 
-        /*
-         * Altijd via canvas gaan zodat we de afmetingen
-         * daadwerkelijk kunnen aanpassen.
-         */
-        const pngBlob = await convertToPng(
-            originalBlob,
-            scale
-        );
+        const pngBlob =
+            await convertToPng(originalBlob, scale);
 
         const clipboardItem = new ClipboardItem({
             "image/png": pngBlob
@@ -292,14 +317,15 @@ async function copyImage(filename) {
         await navigator.clipboard.write([clipboardItem]);
 
     } catch (error) {
+
         console.error("Copy failed:", error);
+
     }
 }
 
 
 /*
- * Converteert de afbeelding naar PNG en schaalt
- * de oorspronkelijke afmetingen met 'scale'.
+ * Converteer en schaal de afbeelding.
  */
 function convertToPng(blob, scale) {
 
@@ -315,12 +341,14 @@ function convertToPng(blob, scale) {
             const height =
                 Math.round(image.naturalHeight * scale);
 
-            const canvas = document.createElement("canvas");
+            const canvas =
+                document.createElement("canvas");
 
             canvas.width = width;
             canvas.height = height;
 
-            const context = canvas.getContext("2d");
+            const context =
+                canvas.getContext("2d");
 
             context.drawImage(
                 image,
@@ -349,13 +377,16 @@ function convertToPng(blob, scale) {
         };
 
         image.onerror = () => {
+
             URL.revokeObjectURL(image.src);
+
             reject(
                 new Error("Could not load image.")
             );
         };
 
-        image.src = URL.createObjectURL(blob);
+        image.src =
+            URL.createObjectURL(blob);
     });
 }
 
