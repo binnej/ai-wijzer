@@ -305,7 +305,7 @@ async function copyImage(filename) {
         const documentMode =
             document.getElementById("documentMode").checked;
 
-        const scale = documentMode ? 1.0 : 0.25;
+        const scale = documentMode ? 1.0 : 0.1;
 
         const pngBlob =
             await convertToPng(originalBlob, scale);
