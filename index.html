@@ -28,13 +28,66 @@
 
         h1 {
             text-align: center;
-            margin: 0 0 30px;
+            margin: 0 0 20px;
             font-size: 28px;
         }
 
         /*
-         * Vier afbeeldingen op de eerste rij,
-         * twee afbeeldingen op de tweede rij.
+         * Schakelaar
+         */
+        .mode-switch {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: #888;
+            border-radius: 28px;
+            transition: 0.2s;
+        }
+
+        .slider:before {
+            content: "";
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+
+        .switch input:checked + .slider {
+            background: #4d90fe;
+        }
+
+        .switch input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /*
+         * Vier afbeeldingen op de eerste rij.
          */
         .images {
             display: grid;
@@ -44,8 +97,19 @@
         }
 
         /*
-         * De thumbnails passen zich automatisch
-         * aan aan de beschikbare breedte.
+         * De afbeeldingen 5 en 6 worden in het midden
+         * van de onderste rij geplaatst.
+         */
+        .image-button:nth-child(5) {
+            grid-column: 2;
+        }
+
+        .image-button:nth-child(6) {
+            grid-column: 3;
+        }
+
+        /*
+         * Thumbnail.
          */
         .image-button {
             border: 2px solid #ddd;
@@ -55,7 +119,6 @@
             cursor: pointer;
 
             width: 100%;
-            height: auto;
             aspect-ratio: 1 / 1;
 
             display: flex;
@@ -83,10 +146,6 @@
             outline-offset: 2px;
         }
 
-        /*
-         * De afbeelding blijft volledig zichtbaar
-         * binnen de thumbnail.
-         */
         .image-button img {
             display: block;
             max-width: 100%;
@@ -97,20 +156,44 @@
         }
 
         /*
-         * Op kleinere schermen worden het twee kolommen.
+         * Op kleinere schermen twee kolommen blijven gebruiken.
+         * Hierdoor worden de thumbnails steeds kleiner in plaats
+         * van weer groter te worden.
          */
         @media (max-width: 700px) {
+            .page {
+                padding: 20px 10px;
+            }
+
             .images {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            /*
+             * Bij twee kolommen gewoon normaal vullen:
+             * 1 2
+             * 3 4
+             * 5 6
+             */
+            .image-button:nth-child(5),
+            .image-button:nth-child(6) {
+                grid-column: auto;
             }
         }
 
-        /*
-         * Op zeer kleine schermen één kolom.
-         */
-        @media (max-width: 450px) {
+        @media (max-width: 350px) {
             .images {
-                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+
+            .image-button {
+                padding: 4px;
+                border-radius: 6px;
+            }
+
+            h1 {
+                font-size: 22px;
             }
         }
     </style>
@@ -121,6 +204,17 @@
 <div class="page">
 
     <h1>Klik op een afbeelding om te kopiëren.</h1>
+
+    <div class="mode-switch">
+        <span>Scherm</span>
+
+        <label class="switch">
+            <input type="checkbox" id="documentMode">
+            <span class="slider"></span>
+        </label>
+
+        <span>Document</span>
+    </div>
 
     <div class="images">
 
@@ -159,6 +253,7 @@
 </div>
 
 <script>
+
 async function copyImage(filename) {
 
     try {
@@ -170,13 +265,25 @@ async function copyImage(filename) {
 
         const originalBlob = await response.blob();
 
-        let pngBlob;
+        /*
+         * Bepaal de gewenste schaal.
+         *
+         * Scherm   = 25%
+         * Document = 100%
+         */
+        const documentMode =
+            document.getElementById("documentMode").checked;
 
-        if (originalBlob.type === "image/png") {
-            pngBlob = originalBlob;
-        } else {
-            pngBlob = await convertToPng(originalBlob);
-        }
+        const scale = documentMode ? 1.0 : 0.25;
+
+        /*
+         * Altijd via canvas gaan zodat we de afmetingen
+         * daadwerkelijk kunnen aanpassen.
+         */
+        const pngBlob = await convertToPng(
+            originalBlob,
+            scale
+        );
 
         const clipboardItem = new ClipboardItem({
             "image/png": pngBlob
@@ -190,17 +297,28 @@ async function copyImage(filename) {
 }
 
 
-function convertToPng(blob) {
+/*
+ * Converteert de afbeelding naar PNG en schaalt
+ * de oorspronkelijke afmetingen met 'scale'.
+ */
+function convertToPng(blob, scale) {
+
     return new Promise((resolve, reject) => {
 
         const image = new Image();
 
         image.onload = () => {
 
+            const width =
+                Math.round(image.naturalWidth * scale);
+
+            const height =
+                Math.round(image.naturalHeight * scale);
+
             const canvas = document.createElement("canvas");
 
-            canvas.width = image.naturalWidth;
-            canvas.height = image.naturalHeight;
+            canvas.width = width;
+            canvas.height = height;
 
             const context = canvas.getContext("2d");
 
@@ -208,17 +326,21 @@ function convertToPng(blob) {
                 image,
                 0,
                 0,
-                image.naturalWidth,
-                image.naturalHeight
+                width,
+                height
             );
 
             canvas.toBlob(
                 result => {
+
                     if (result) {
                         resolve(result);
                     } else {
-                        reject(new Error("PNG conversion failed."));
+                        reject(
+                            new Error("PNG conversion failed.")
+                        );
                     }
+
                 },
                 "image/png"
             );
@@ -228,12 +350,15 @@ function convertToPng(blob) {
 
         image.onerror = () => {
             URL.revokeObjectURL(image.src);
-            reject(new Error("Could not load image."));
+            reject(
+                new Error("Could not load image.")
+            );
         };
 
         image.src = URL.createObjectURL(blob);
     });
 }
+
 </script>
 
 </body>
