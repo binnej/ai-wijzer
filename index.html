@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 ```
-<title>Copy an Image</title>
+<title>Copy Images</title>
 
 <style>
     * {
@@ -19,20 +19,17 @@
         font-family: Arial, Helvetica, sans-serif;
         background: #f5f5f5;
         color: #222;
-
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
     }
 
     .page {
         width: min(1000px, 100%);
-        padding: 40px 20px;
+        margin: 0 auto;
+        padding: 30px 20px;
     }
 
     h1 {
         text-align: center;
-        margin: 0 0 10px;
+        margin: 0 0 8px;
         font-size: 28px;
     }
 
@@ -42,12 +39,19 @@
         color: #666;
     }
 
+    /*
+     * Six images in a 3 x 2 grid.
+     */
     .images {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 20px;
     }
 
+    /*
+     * Each thumbnail is a button, so it is also
+     * keyboard accessible.
+     */
     .image-button {
         border: 2px solid #ddd;
         border-radius: 12px;
@@ -55,16 +59,16 @@
         padding: 10px;
         cursor: pointer;
 
-        transition:
-            border-color 0.15s ease,
-            transform 0.15s ease,
-            box-shadow 0.15s ease;
+        height: 250px;
 
         display: flex;
         justify-content: center;
         align-items: center;
 
-        min-height: 250px;
+        transition:
+            border-color 0.15s ease,
+            transform 0.15s ease,
+            box-shadow 0.15s ease;
     }
 
     .image-button:hover {
@@ -82,10 +86,16 @@
         outline-offset: 2px;
     }
 
+    /*
+     * The image is only displayed as a thumbnail.
+     * The original file is still copied when clicked.
+     */
     .image-button img {
         display: block;
         max-width: 100%;
-        max-height: 350px;
+        max-height: 100%;
+        width: auto;
+        height: auto;
         object-fit: contain;
     }
 
@@ -104,17 +114,25 @@
         color: #c5221f;
     }
 
-    @media (max-width: 600px) {
-        .page {
-            padding: 25px 15px;
+    /*
+     * On smaller screens, use two columns.
+     */
+    @media (max-width: 700px) {
+        .images {
+            grid-template-columns: repeat(2, 1fr);
         }
+    }
 
+    /*
+     * On very small screens, use one column.
+     */
+    @media (max-width: 450px) {
         .images {
             grid-template-columns: 1fr;
         }
 
         .image-button {
-            min-height: 200px;
+            height: 220px;
         }
     }
 </style>
@@ -130,25 +148,33 @@
 <h1>Click an image to copy it</h1>
 
 <p class="instructions">
-    Click an image, then paste it wherever you need it.
+    Click an image to copy the full-size image.
 </p>
 
 <div class="images">
 
-    <button class="image-button" type="button" onclick="copyImage(this)">
+    <button class="image-button" type="button" onclick="copyImage('image1.png')">
         <img src="image1.png" alt="Image 1">
     </button>
 
-    <button class="image-button" type="button" onclick="copyImage(this)">
+    <button class="image-button" type="button" onclick="copyImage('image2.png')">
         <img src="image2.png" alt="Image 2">
     </button>
 
-    <button class="image-button" type="button" onclick="copyImage(this)">
+    <button class="image-button" type="button" onclick="copyImage('image3.png')">
         <img src="image3.png" alt="Image 3">
     </button>
 
-    <button class="image-button" type="button" onclick="copyImage(this)">
+    <button class="image-button" type="button" onclick="copyImage('image4.png')">
         <img src="image4.png" alt="Image 4">
+    </button>
+
+    <button class="image-button" type="button" onclick="copyImage('image5.png')">
+        <img src="image5.png" alt="Image 5">
+    </button>
+
+    <button class="image-button" type="button" onclick="copyImage('image6.png')">
+        <img src="image6.png" alt="Image 6">
     </button>
 
 </div>
@@ -159,42 +185,46 @@
 </div>
 
 <script>
-async function copyImage(button) {
-    const img = button.querySelector("img");
+async function copyImage(filename) {
     const status = document.getElementById("status");
 
     status.textContent = "";
     status.className = "status";
 
     try {
-        // Make sure the image has finished loading.
-        if (!img.complete) {
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-            });
+        /*
+         * Fetch the ORIGINAL image.
+         *
+         * This is important: the thumbnail displayed on the
+         * page does not determine the resolution of the copy.
+         */
+        const response = await fetch(filename);
+
+        if (!response.ok) {
+            throw new Error("Could not load image.");
         }
 
-        // Draw the image onto a canvas.
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        const originalBlob = await response.blob();
 
-        const context = canvas.getContext("2d");
-        context.drawImage(img, 0, 0);
+        /*
+         * Clipboard image support works best with PNG.
+         *
+         * If the source image is already PNG, we can use it
+         * directly. Otherwise convert it to PNG first.
+         */
+        let pngBlob;
 
-        // Convert the canvas to a PNG blob.
-        const blob = await new Promise(resolve => {
-            canvas.toBlob(resolve, "image/png");
-        });
-
-        if (!blob) {
-            throw new Error("Could not create image data.");
+        if (originalBlob.type === "image/png") {
+            pngBlob = originalBlob;
+        } else {
+            pngBlob = await convertToPng(originalBlob);
         }
 
-        // Copy the image to the clipboard.
+        /*
+         * Copy the FULL-SIZE image to the clipboard.
+         */
         const clipboardItem = new ClipboardItem({
-            "image/png": blob
+            "image/png": pngBlob
         });
 
         await navigator.clipboard.write([clipboardItem]);
@@ -210,6 +240,56 @@ async function copyImage(button) {
 
         status.className = "status error";
     }
+}
+
+
+/*
+ * Convert JPG/JPEG/etc. to PNG while preserving
+ * the original image dimensions.
+ */
+function convertToPng(blob) {
+    return new Promise((resolve, reject) => {
+
+        const image = new Image();
+
+        image.onload = () => {
+
+            const canvas = document.createElement("canvas");
+
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
+
+            const context = canvas.getContext("2d");
+
+            context.drawImage(
+                image,
+                0,
+                0,
+                image.naturalWidth,
+                image.naturalHeight
+            );
+
+            canvas.toBlob(
+                result => {
+                    if (result) {
+                        resolve(result);
+                    } else {
+                        reject(new Error("PNG conversion failed."));
+                    }
+                },
+                "image/png"
+            );
+
+            URL.revokeObjectURL(image.src);
+        };
+
+        image.onerror = () => {
+            URL.revokeObjectURL(image.src);
+            reject(new Error("Could not load image."));
+        };
+
+        image.src = URL.createObjectURL(blob);
+    });
 }
 </script>
 
