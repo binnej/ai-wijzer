@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -85,13 +85,16 @@
             transform: translateX(24px);
         }
 
+
         /*
-         * Vier afbeeldingen op de eerste rij.
-         * Twee gecentreerd op de tweede rij.
+         * AFBEELDINGEN
+         *
+         * Altijd vier kolommen.
+         * Afbeelding 5 en 6 komen gecentreerd op de tweede rij.
          */
         .images {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 20px;
             width: 100%;
             align-items: start;
@@ -105,8 +108,9 @@
             grid-column: 3;
         }
 
+
         /*
-         * De knop zelf past zich aan de afbeelding aan.
+         * Knop
          */
         .image-button {
             border: 2px solid #ddd;
@@ -116,6 +120,8 @@
             cursor: pointer;
 
             width: 100%;
+            min-width: 0;
+
             display: flex;
             justify-content: center;
             align-items: center;
@@ -141,62 +147,25 @@
             outline-offset: 2px;
         }
 
+
         /*
-         * BELANGRIJK:
+         * Thumbnail
          *
-         * De Javascript-code zet de breedte en hoogte
-         * van de afbeeldingen op 25% van hun originele
-         * afmetingen.
+         * --thumbnail-width wordt door Javascript ingesteld
+         * op 25% van de originele afbeelding.
+         *
+         * width: min(...)
+         *
+         * betekent:
+         * - maximaal 25% van origineel
+         * - maar als de kolom smaller wordt, krimpt de afbeelding mee
          */
         .image-button img {
             display: block;
-            width: auto;
+            width: min(100%, var(--thumbnail-width));
             height: auto;
-            max-width: none;
         }
 
-        /*
-         * Als het venster te klein wordt, mogen de
-         * thumbnails visueel kleiner worden.
-         *
-         * Dit verandert NIET de grootte van de afbeelding
-         * die wordt gekopieerd.
-         */
-        @media (max-width: 700px) {
-            .page {
-                padding: 20px 10px;
-            }
-
-            .images {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-            }
-
-            .image-button:nth-child(5),
-            .image-button:nth-child(6) {
-                grid-column: auto;
-            }
-
-            .image-button img {
-                max-width: 100%;
-                height: auto;
-            }
-        }
-
-        @media (max-width: 350px) {
-            .images {
-                gap: 5px;
-            }
-
-            .image-button {
-                padding: 4px;
-                border-radius: 6px;
-            }
-
-            h1 {
-                font-size: 22px;
-            }
-        }
     </style>
 </head>
 
@@ -207,6 +176,7 @@
     <h1>Klik op een afbeelding om te kopiëren.</h1>
 
     <div class="mode-switch">
+
         <span>Scherm</span>
 
         <label class="switch">
@@ -215,53 +185,85 @@
         </label>
 
         <span>Document</span>
+
     </div>
+
 
     <div class="images">
 
-        <button class="image-button" type="button"
+        <button class="image-button"
+                type="button"
                 onclick="copyImage('image1.png')">
+
             <img src="image1.png" alt="Image 1">
+
         </button>
 
-        <button class="image-button" type="button"
+
+        <button class="image-button"
+                type="button"
                 onclick="copyImage('image2.png')">
+
             <img src="image2.png" alt="Image 2">
+
         </button>
 
-        <button class="image-button" type="button"
+
+        <button class="image-button"
+                type="button"
                 onclick="copyImage('image3.png')">
+
             <img src="image3.png" alt="Image 3">
+
         </button>
 
-        <button class="image-button" type="button"
+
+        <button class="image-button"
+                type="button"
                 onclick="copyImage('image4.png')">
+
             <img src="image4.png" alt="Image 4">
+
         </button>
 
-        <button class="image-button" type="button"
+
+        <button class="image-button"
+                type="button"
                 onclick="copyImage('image5.png')">
+
             <img src="image5.png" alt="Image 5">
+
         </button>
 
-        <button class="image-button" type="button"
+
+        <button class="image-button"
+                type="button"
                 onclick="copyImage('image6.png')">
+
             <img src="image6.png" alt="Image 6">
+
         </button>
 
     </div>
 
 </div>
 
+
 <script>
 
 /*
- * Toon iedere afbeelding op 25% van zijn originele
- * pixelafmetingen.
+ * Stel de maximale thumbnailgrootte in.
+ *
+ * De afbeeldingen worden maximaal 25% van hun
+ * originele pixelafmetingen weergegeven.
+ *
+ * CSS zorgt er vervolgens voor dat ze automatisch
+ * kleiner worden wanneer het venster te klein wordt.
  */
 function setThumbnailSizes() {
 
-    const images = document.querySelectorAll(".image-button img");
+    const images =
+        document.querySelectorAll(".image-button img");
 
     images.forEach(image => {
 
@@ -269,11 +271,11 @@ function setThumbnailSizes() {
             return;
         }
 
-        image.style.width =
-            (image.naturalWidth * 0.25) + "px";
+        image.style.setProperty(
+            "--thumbnail-width",
+            (image.naturalWidth * 0.25) + "px"
+        );
 
-        image.style.height =
-            (image.naturalHeight * 0.25) + "px";
     });
 }
 
@@ -281,117 +283,47 @@ function setThumbnailSizes() {
 /*
  * Wacht tot alle afbeeldingen geladen zijn.
  */
-window.addEventListener("load", setThumbnailSizes);
+window.addEventListener(
+    "load",
+    setThumbnailSizes
+);
 
 
 /*
  * Kopieer de afbeelding.
  *
- * Scherm   = 25%
+ * Scherm   = 10%
  * Document = 100%
+ *
+ * Dit staat volledig los van de grootte waarop
+ * de thumbnail op het scherm wordt weergegeven.
  */
 async function copyImage(filename) {
 
     try {
 
-        const response = await fetch(filename);
+        const response =
+            await fetch(filename);
 
         if (!response.ok) {
-            throw new Error("Could not load image.");
+            throw new Error(
+                "Could not load image."
+            );
         }
 
-        const originalBlob = await response.blob();
+        const originalBlob =
+            await response.blob();
+
 
         const documentMode =
-            document.getElementById("documentMode").checked;
+            document.getElementById(
+                "documentMode"
+            ).checked;
 
-        const scale = documentMode ? 1.0 : 0.1;
+
+        const scale =
+            documentMode ? 1.0 : 0.1;
+
 
         const pngBlob =
-            await convertToPng(originalBlob, scale);
-
-        const clipboardItem = new ClipboardItem({
-            "image/png": pngBlob
-        });
-
-        await navigator.clipboard.write([clipboardItem]);
-
-    } catch (error) {
-
-        console.error("Copy failed:", error);
-
-    }
-}
-
-
-/*
- * Converteer en schaal de afbeelding.
- */
-function convertToPng(blob, scale) {
-
-    return new Promise((resolve, reject) => {
-
-        const image = new Image();
-
-        image.onload = () => {
-
-            const width =
-                Math.round(image.naturalWidth * scale);
-
-            const height =
-                Math.round(image.naturalHeight * scale);
-
-            const canvas =
-                document.createElement("canvas");
-
-            canvas.width = width;
-            canvas.height = height;
-
-            const context =
-                canvas.getContext("2d");
-
-            context.drawImage(
-                image,
-                0,
-                0,
-                width,
-                height
-            );
-
-            canvas.toBlob(
-                result => {
-
-                    if (result) {
-                        resolve(result);
-                    } else {
-                        reject(
-                            new Error("PNG conversion failed.")
-                        );
-                    }
-
-                },
-                "image/png"
-            );
-
-            URL.revokeObjectURL(image.src);
-        };
-
-        image.onerror = () => {
-
-            URL.revokeObjectURL(image.src);
-
-            reject(
-                new Error("Could not load image.")
-            );
-        };
-
-        image.src =
-            URL.createObjectURL(blob);
-    });
-}
-
-</script>
-
-</body>
-</html>
-```
+            await convertToPng(
